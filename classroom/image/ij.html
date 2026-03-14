@@ -36,8 +36,27 @@ a{text-decoration:none; color:white;}
 .cart{display:flex; align-items:center; gap:5px; font-weight:700; padding:6px 10px; cursor:pointer;}
 .cart i{font-size:22px;}
 
-/* Hero */
-.hero-section{height:350px; background:url("hero_image.jpg") center/cover no-repeat; margin-bottom:20px;}
+/* Hero Slider */
+.hero-section{
+width:100%;
+height:400px;
+overflow:hidden;
+position:relative;
+}
+
+.hero-slide{
+width:100%;
+height:400px;
+object-fit:cover;
+position:absolute;
+opacity:0;
+transition:1s;
+}
+
+.hero-slide.active{
+opacity:1;
+}
+
 
 /* Shop */
 .shop-section{display:flex; flex-wrap:wrap; justify-content:space-evenly; gap:20px; padding:20px; background:#e3e6e6;}
@@ -140,8 +159,15 @@ a{text-decoration:none; color:white;}
   <a class="cart nav-border" id="cart-btn"><i class="fa-solid fa-cart-shopping"></i> Cart</a>
 </div>
 
-<!-- Hero -->
-<div class="hero-section"></div>
+  <!-- Hero Slider -->
+<div class="hero-section">
+  <img src="hero1.jpg" class="hero-slide active">
+  <img src="hero2.jpg" class="hero-slide">
+  <img src="hero3.jpg" class="hero-slide">
+  <img src="hero4.jpg" class="hero-slide">
+  <img src="hero5.jpg" class="hero-slide">
+  <img src="hero6.jpg" class="hero-slide">
+</div>
 
 <!-- Shop Section -->
 <div class="shop-section" id="shop"></div>
@@ -171,7 +197,7 @@ let productsDB = [
 localStorage.setItem("products", JSON.stringify(productsDB));
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-// ===== Render Shop =====
+// ===== RENDER SHOP =====
 const shop = document.getElementById("shop");
 function renderShop(products){
   shop.innerHTML='';
@@ -183,7 +209,7 @@ function renderShop(products){
   });
 }
 
-// ===== Cart =====
+// ===== CART =====
 const cartPanel = document.getElementById("cart-panel");
 const cartItemsDiv = document.getElementById("cart-items");
 const cartTotal = document.getElementById("cart-total");
@@ -214,14 +240,36 @@ function removeFromCart(index){
   renderCart();
 }
 
-document.getElementById("cart-btn").addEventListener('click', ()=>{cartPanel.style.display = cartPanel.style.display==='block'?'none':'block';});
-document.getElementById("search-btn").addEventListener('click', ()=>{
-  const searchText = document.getElementById("search-bar").value.toLowerCase();
-  renderShop(productsDB.filter(p=>p.name.toLowerCase().includes(searchText)));
+// Cart toggle
+document.getElementById("cart-btn").addEventListener('click', ()=>{
+  cartPanel.style.display = cartPanel.style.display==='block'?'none':'block';
 });
-renderShop(productsDB);
-renderCart();
 
+// ===== SEARCH FUNCTIONALITY =====
+const searchBar = document.getElementById("search-bar");
+const searchBtn = document.getElementById("search-btn");
+
+function performSearch(){
+  const searchText = searchBar.value.toLowerCase().trim();
+  if(searchText === "") {
+    renderShop(productsDB);
+    return;
+  }
+  const filteredProducts = productsDB.filter(p => p.name.toLowerCase().includes(searchText));
+  renderShop(filteredProducts);
+}
+
+// Search button click
+searchBtn.addEventListener('click', performSearch);
+
+// Enter key press
+searchBar.addEventListener('keypress', function(e){
+  if(e.key === 'Enter'){
+    performSearch();
+  }
+});
+
+// ===== CHECKOUT =====
 function checkout(){
   alert("Thank you for your purchase!");
   localStorage.setItem("cart","[]");
@@ -229,32 +277,47 @@ function checkout(){
   renderCart();
 }
 
-// ===== Delivery =====
+// ===== DELIVERY =====
 const deliveryTab = document.getElementById('delivery-tab');
 const deliveryOptions = document.getElementById('delivery-options');
 const deliveryCity = document.getElementById('delivery-city');
-deliveryTab.addEventListener('click', ()=>{deliveryOptions.style.display = deliveryOptions.style.display==='none'?'block':'none';});
-document.querySelectorAll('.city-option').forEach(opt=>{opt.addEventListener('click', ()=>{
-  deliveryCity.textContent=opt.textContent; deliveryOptions.style.display='none';
-})});
+deliveryTab.addEventListener('click', ()=>{
+  deliveryOptions.style.display = deliveryOptions.style.display==='none'?'block':'none';
+});
+document.querySelectorAll('.city-option').forEach(opt=>{
+  opt.addEventListener('click', ()=>{
+    deliveryCity.textContent=opt.textContent; 
+    deliveryOptions.style.display='none';
+  });
+});
 
-// ===== Login =====
+// ===== LOGIN =====
 const signInBtn = document.getElementById('sign-in-btn');
 const loginModal = document.getElementById('login-modal');
 const loginSubmit = document.getElementById('login-submit');
 const helloText = document.getElementById('hello-text');
 const accountName = document.getElementById('account-name');
+
 signInBtn.addEventListener('click', ()=>{loginModal.style.display='flex';});
 loginSubmit.addEventListener('click', ()=>{
   const username=document.getElementById('username').value;
-  if(username){helloText.textContent=`Hello, ${username}`; accountName.textContent=`Account & Lists`; loginModal.style.display='none'; localStorage.setItem("user",username); alert(`Login Successful! Welcome ${username}`);}});
+  if(username){
+    helloText.textContent=`Hello, ${username}`;
+    accountName.textContent=`Account & Lists`;
+    loginModal.style.display='none';
+    localStorage.setItem("user",username);
+    alert(`Login Successful! Welcome ${username}`);
+  }
+});
+
 const savedUser = localStorage.getItem("user");
 if(savedUser){helloText.textContent=`Hello, ${savedUser}`; accountName.textContent="Account & Lists";}
 
-// ===== Orders =====
+// ===== ORDERS =====
 const ordersBtn = document.getElementById('orders-btn');
 const ordersModal = document.getElementById('orders-modal');
 const orderList = document.getElementById('order-list');
+
 ordersBtn.addEventListener('click', ()=>{
   ordersModal.style.display='flex';
   const savedOrders = JSON.parse(localStorage.getItem("cart")) || [];
@@ -265,6 +328,33 @@ ordersBtn.addEventListener('click', ()=>{
     orderList.appendChild(div);
   });
 });
+
+// Initial render
+renderShop(productsDB);
+renderCart();
 </script>
+<script>
+
+// HERO SLIDER
+let heroSlides = document.querySelectorAll(".hero-slide");
+let heroIndex = 0;
+
+function showHeroSlide(){
+  heroSlides.forEach(slide => slide.classList.remove("active"));
+
+  heroIndex++;
+
+  if(heroIndex >= heroSlides.length){
+    heroIndex = 0;
+  }
+
+  heroSlides[heroIndex].classList.add("active");
+}
+
+setInterval(showHeroSlide,3000);
+
+</script>
+
+
 </body>
 </html>
